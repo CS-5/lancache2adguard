@@ -1,1 +1,1 @@
-0 2 * * * create_list.sh 2>&1
+0 2 * * * /lc2ag/create_list.sh 2>&1
