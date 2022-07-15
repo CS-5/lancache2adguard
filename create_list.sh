@@ -5,9 +5,9 @@
 
 set -e 
 
-trap cleanup EXIT
-
 echo "Generating domain list..."
+
+LC2AG_TEMP_DIR=$(mktemp -d)
 
 git clone --quiet --depth 1 "${LC2AG_DOMAINS_REPO}" "${LC2AG_TEMP_DIR}"
 
@@ -39,3 +39,6 @@ function cleanup()
 	[ -d "${LC2AG_TEMP_DIR}" ] && rm -rf "${LC2AG_TEMP_DIR}"
   echo "List generated, cleanup finished"
 }
+
+trap cleanup EXIT
+
