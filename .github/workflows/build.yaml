@@ -1,0 +1,30 @@
+name: build
+
+on:
+  push:
+    tags:
+      - "*" # Push events to every tag not containing /
+
+jobs:
+  build:
+    name: "Build Container"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v2
+
+      - name: Get the version
+        id: version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+
+      - name: "Docker Build/Push"
+        id: build
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: cs-5/lc2ag
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ghcr.io
+          tags: "latest,${{ steps.version.outputs.VERSION }}"
