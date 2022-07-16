@@ -9,36 +9,29 @@ echo "Generating domain list..."
 
 LC2AG_TEMP_DIR=$(mktemp -d)
 
+cleanup() {
+    [ -d "${LC2AG_TEMP_DIR}" ] && rm -rf "${LC2AG_TEMP_DIR}"
+    echo "List generated, cleanup finished"
+}
+
 git clone --quiet --depth 1 "${LC2AG_DOMAINS_REPO}" "${LC2AG_TEMP_DIR}"
 
 {
-  echo "# Generated at $(date -u)"
-	echo "# Source repo: ${LC2AG_DOMAINS_REPO}"
-	echo
-
-  {
-		find "${LC2AG_TEMP_DIR}" -type f -iname '*.txt' | while read -r file_name
-		do
-			grep -vE '(^\s*$|^#)' "${file_name}" | while read -r domain
-			do
-				if echo "${domain}" | grep -qE '^\*\.'
-				then
-					domain_nowc=$(echo "${domain}" | sed -E 's/^\*\.//')
-					echo "||${domain_nowc}^|\$dnsrewrite=NOERROR;A;${LC2AG_CACHE_SERVER}"
-				else
-					echo "|${domain}|\$dnsrewrite=NOERROR;A;${LC2AG_CACHE_SERVER}"
-				fi
-			done
-		done
-
-	} | sort | uniq
+    echo "# Generated at $(date -u)"
+    echo "# Source repo: ${LC2AG_DOMAINS_REPO}"
+    echo
+    {
+        while read -r file_name; do
+            while read -r domain; do
+                if echo "${domain}" | grep -qE '^\*\.'; then
+                    domain_nowc=$(echo "${domain}" | sed -E 's/^\*\.//')
+                    echo "||${domain_nowc}^|\$dnsrewrite=NOERROR;A;${LC2AG_CACHE_SERVER}"
+                else
+                    echo "|${domain}|\$dnsrewrite=NOERROR;A;${LC2AG_CACHE_SERVER}"
+                fi
+            done < <(grep -vE '(^\s*$|^#)' "${file_name}")
+        done < <(find "${LC2AG_TEMP_DIR}" -type f -iname '*.txt')
+    } | sort -u
 } > "${LC2AG_OUT_FILE}"
 
-function cleanup()
-{
-	[ -d "${LC2AG_TEMP_DIR}" ] && rm -rf "${LC2AG_TEMP_DIR}"
-  echo "List generated, cleanup finished"
-}
-
 trap cleanup EXIT
-
